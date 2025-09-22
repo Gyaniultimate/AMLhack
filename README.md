@@ -1,237 +1,368 @@
-<div align="center">
+# 🚀 Hackathon Setup Guide
 
-🛡️ Aegis Protocol: On-Chain AML Compliance Oracle
-A real-time, on-chain AML risk assessment solution for non-custodial wallets built on the Cosmos SDK.
+This guide will help you install all the necessary tools to **run a Cosmos SDK chain** and **develop & deploy CosmWasm smart contracts**.  
 
-</div>
+Please follow the steps carefully in the order given. 
 
-<p align="center">
-<img alt="Cosmos SDK" src="https://www.google.com/search?q=https://img.shields.io/badge/Cosmos_SDK-%25235064FB.svg%3Fstyle%3Dfor-the-badge%26logo%3Dcosmos%26logoColor%3Dwhite">
-<img alt="CosmWasm" src="https://www.google.com/search?q=https://img.shields.io/badge/CosmWasm-grey%3Fstyle%3Dfor-the-badge%26logo%3Drust%26logoColor%3Dwhite">
-<img alt="Rust" src="https://www.google.com/search?q=https://img.shields.io/badge/rust-%2523000000.svg%3Fstyle%3Dfor-the-badge%26logo%3Drust%26logoColor%3Dwhite">
-<img alt="Node.js" src="https://www.google.com/search?q=https://img.shields.io/badge/node.js-6DA55F%3Fstyle%3Dfor-the-badge%26logo%3Dnode.js%26logoColor%3Dwhite">
-<img alt="TypeScript" src="https://www.google.com/search?q=https://img.shields.io/badge/typescript-%2523007ACC.svg%3Fstyle%3Dfor-the-badge%26logo%3Dtypescript%26logoColor%3Dwhite">
-<img alt="Docker" src="https://www.google.com/search?q=https://img.shields.io/badge/docker-%25230db7ed.svg%3Fstyle%3Dfor-the-badge%26logo%3Ddocker%26logoColor%3Dwhite">
-<img alt="License: MIT" src="https://www.google.com/search?q=https://img.shields.io/badge/License-MIT-yellow.svg%3Fstyle%3Dfor-the-badge">
-</p>
+# Prerequisites 
+## 1. Install Go
+- Download the appropriate installer: [https://go.dev/dl/](https://go.dev/dl/)
+- Follow the on-screen instructions to complete installation.
 
-📋 Table of Contents
-💡 Inspiration
+---
 
-🚀 What It Does
+## 2. Install Git
+- Download Git for Windows: [https://git-scm.com/downloads/win](https://git-scm.com/downloads/win)
+- Install with default settings.
+- Unless mentioned otherwise, use **Git Bash** for running the commands
 
-💻 How It's Built
+---
 
-🧠 Prospective AML Logic
+## 3. Install Visual Studio Code (VS Code)
+- Download from: [https://code.visualstudio.com/download](https://code.visualstudio.com/download)
+- After installation, install the **Cosmy Wasmy** extension:  
+  👉 [Cosmy Wasmy Extension](https://marketplace.visualstudio.com/items?itemName=spoorthi.cosmy-wasmy)
 
-⚙️ Setup and Installation
+📂 Extension GitHub: [https://github.com/spoo-bar/cosmy-wasmy](https://github.com/spoo-bar/cosmy-wasmy)
+- Add this to `cosmywasmy.chains` within `settings.json` of vscode
+```json
+{
+    "configName": "wfchain",
+    "chainId": "testing",
+    "chainEnvironment": "localnet",
+    "addressPrefix": "wasm",
+    "rpcEndpoint": "http://localhost:26657",
+    "defaultGasPrice": "0",
+    "chainDenom": "ustake"
+},
+```
+- To open `settings.json`, open VS Code settings, search for cosmywasmy and click on `Edit in settings.json` 
+- Click on the box in the bottom-left of the editor and click on wfchain in the prompt that pops up.
+---
+
+## 4. Install Rust
+- Download and run the installer: [https://www.rust-lang.org/tools/install](https://www.rust-lang.org/tools/install)  
+  (Download the `rustup-init.exe` file)
+- After installation, run the following commands in Terminal:
+
+```bash
+rustup install 1.86
+rustup default 1.86
+rustup target add wasm32-unknown-unknown
+cargo install wasm-opt
+cargo install cosmwasm-check
+```
+
+---
+
+## 5. Install Docker & WSL
+
+* Install Docker Desktop: [https://docs.docker.com/desktop/setup/install/windows-install/](https://docs.docker.com/desktop/setup/install/windows-install/)
+* Enable WSL by running in **cmd**:
+
+```bash
+wsl --install
+```
+
+⚠️ If you face WSL installation issues, run in **cmd** with admin privileges:
+
+```bash
+bcdedit /set hypervisorlaunchtype auto
+```
+and restart your machine, it should start working.
 
-🧗 Challenges We Ran Into
+Reference: [WSL Issue Fix](https://github.com/microsoft/WSL/issues/9652#issuecomment-1474858120)
 
-🎉 Accomplishments & What's Next
+---
 
-👥 Team
+## 6. Setup the Cosmos Chain with Docker
 
-🎬 Demo & Presentation
+* Pull the prebuilt blockchain image:
 
-💡 Inspiration
-Non-custodial wallets empower users with full control over their assets, but this autonomy presents a significant challenge for regulatory compliance. Financial institutions and decentralized applications lack visibility into the historical activity of these wallets, creating risks related to Anti-Money Laundering (AML). Our project was inspired by the need for a decentralized, trust-minimized solution that allows smart contracts to assess the risk profile of interacting wallets in real-time, fostering a safer and more compliant on-chain environment.
+```bash
+docker pull --platform linux/amd64 soumithbasina/wfblockchain:latest
+```
 
-🚀 What It Does
-Aegis Protocol introduces an on-chain/off-chain system to flag suspicious non-custodial wallets. The workflow is as follows:
+* Initialize the chain:
 
-Request: A user interacts with a smart contract, which triggers an AML check for a specific wallet address.
+```bash
+docker run --rm -it --mount type=volume,source=wasmd_data,target=//root/.wasmd \
+  soumithbasina/wfblockchain:latest //opt/setup_wasmd.sh
+```
 
-Event Emission: The smart contract stores the request as pending and emits an on-chain event with the wallet address and a unique request ID.
+* Run the chain:
 
-Oracle Listener: A dedicated off-chain oracle service continuously listens for these events.
+```bash
+docker run --rm -it -p 26657:26657 -p 26656:26656 -p 1317:1317 \
+  --mount type=volume,source=wasmd_data,target=//root/.wasmd \
+  soumithbasina/wfblockchain:latest //opt/run_wasmd.sh
+```
 
-Data Analysis: Upon hearing an event, the oracle queries its historical transaction dataset (derived from Google BigQuery's public Bitcoin and Ethereum data) to analyze the wallet's past activity.
+* To reset the blockchain state:
 
-Risk Scoring: The oracle uses a configurable AML logic engine to calculate a risk score and determine a compliance status (e.g., Compliant / Non-Compliant).
+```bash
+docker volume rm -f wasmd_data
+```
+
+---
 
-Callback: The oracle submits the result back to the smart contract, referencing the unique request ID.
+## 7. Install Node.js & npm
 
-State Update: The smart contract verifies the oracle's signature, updates the request status to complete, and stores the AML result on-chain, making it available for other smart contracts to query.
-
-💻 How It's Built (Tech Stack)
-Category
-
-Technology
-
-Blockchain
-
-<img src="https://www.google.com/search?q=https://img.shields.io/badge/Cosmos_SDK-%25235064FB.svg%3Fstyle%3Dflat%26logo%3Dcosmos%26logoColor%3Dwhite" alt="Cosmos SDK">
-
-Smart Contracts
-
-<img src="https://www.google.com/search?q=https://img.shields.io/badge/CosmWasm-grey%3Fstyle%3Dflat%26logo%3Drust%26logoColor%3Dwhite" alt="CosmWasm"> & <img src="https://www.google.com/search?q=https://img.shields.io/badge/rust-%2523000000.svg%3Fstyle%3Dflat%26logo%3Drust%26logoColor%3Dwhite" alt="Rust">
-
-Oracle Service
-
-<img src="https://www.google.com/search?q=https://img.shields.io/badge/node.js-6DA55F%3Fstyle%3Dflat%26logo%3Dnode.js%26logoColor%3Dwhite" alt="Node.js">, <img src="https://www.google.com/search?q=https://img.shields.io/badge/typescript-%2523007ACC.svg%3Fstyle%3Dflat%26logo%3Dtypescript%26logoColor%3Dwhite" alt="TypeScript">
-
-Data Source
-
-Google BigQuery Public Datasets (Bitcoin & Ethereum)
-
-Environment
-
-<img src="https://www.google.com/search?q=https://img.shields.io/badge/docker-%25230db7ed.svg%3Fstyle%3Dflat%26logo%3Ddocker%26logoColor%3Dwhite" alt="Docker">
-
-🧠 Prospective AML Logic (The Solution)
-The core of the oracle is its AML logic engine. We designed a multi-layered approach that can be implemented to achieve varying degrees of accuracy and complexity.
-
-Tier 1: Rule-Based Heuristics (MVP)
-This model uses a simple, weighted scoring system based on predefined rules. It's fast, transparent, and effective for identifying basic red flags.
-
-Transaction Value Threshold:
-
-Logic: Assign risk points for transactions exceeding a certain fiat value (e.g., >$10,000).
-
-Data Points: btc-transactions.value, eth-transactions.value.
-
-Transaction Velocity & Volume:
-
-Logic: Flag addresses that suddenly receive and send large volumes of funds in a short period (e.g., within 24 hours), which can be indicative of mixing or tumbling services.
-
-Data Points: block_timestamp.
-
-Interaction with High-Risk Entities:
-
-Logic: Maintain and check against static lists of known sanctioned addresses, darknet market wallets, or mixer contracts. An interaction results in a maximum risk score.
-
-Data Points: btc-inputs.spent_transaction_hash, eth-traces.to_address.
-
-Address "Freshness":
-
-Logic: Apply a higher baseline risk to new wallets that immediately engage in high-value or high-velocity transactions without a prior history.
-
-Data Points: block_timestamp of the first transaction.
-
-Tier 2: Graph Analysis (Advanced)
-This approach models the transaction history as a graph, where addresses are nodes and transactions are edges. It allows for the discovery of complex, indirect relationships.
-
-Sybil Detection: Identify clusters of wallets that are likely controlled by a single entity by analyzing transaction flows and timing.
-
-Pathfinding to Illicit Sources: Trace funds back multiple hops to see if they originate from or pass through known high-risk addresses.
-
-Centrality Analysis: Identify wallets that act as critical hubs or intermediaries in the flow of funds, which could indicate an unregistered exchange or a large-scale tumbler.
-
-Tier 3: Machine Learning (Future Scope)
-Anomaly Detection: Train an unsupervised model (e.g., Isolation Forest) on the entire dataset to identify transactions or address behaviors that are statistically significant outliers from the norm.
-
-Supervised Classification: Build a labeled dataset of "illicit" vs. "licit" addresses and train a classifier (e.g., Random Forest, XGBoost) to predict the risk of a new address based on features engineered from its transaction history.
-
-⚙️ Setup and Installation
-Follow these steps to set up and run the project locally.
-
-Clone the Repository
-
-git clone [LINK_TO_YOUR_REPO]
-cd [REPO_NAME]
-
-Download & Prepare Data
-
-Download the dataset: curl -o hackathon.zip https://storage.googleapis.com/blockchain-hackathon/hackathon.zip
-
-Unzip the main file: unzip hackathon.zip
-
-Navigate to the data folder and unzip all data files using the provided script:
-
-cd data/hackathon
-chmod +x unzip_all.sh
-./unzip_all.sh
-cd ../.. 
-
-Run the Local Blockchain
-
-cd docker
-./setup_and_run.sh
-
-Compile & Deploy the Smart Contract
-
-Compile: From the project root, run the rust-optimizer:
-
-docker run --rm -v "$(pwd)/sample-contract":/code \
-  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
-  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/rust-optimizer:0.12.13
-
-Deploy: Enter the running docker container to execute deployment commands:
-
-docker exec -it wasmd /bin/sh
-
-# Inside the container, run the following:
-# 1. Store the contract
-CODE_ID=$(wasmd tx wasm store "/root/contract/artifacts/sample_contract.wasm" --from wallet --chain-id "testing" -y --node "http://localhost:26657" --gas-prices "0.025stake" --gas "auto" --gas-adjustment 1.2 --output json | jq -r '.logs[0].events[-1].attributes[0].value')
-
-# 2. Instantiate the contract and echo the address
-wasmd tx wasm instantiate $CODE_ID '{"oracle_pubkey":"A316E25B575924296805721F53532F473615A832168955171165A2890F385813"}' --from wallet --label "aml-oracle" --admin $(wasmd keys show wallet -a) --chain-id "testing" -y --node "http://localhost:26657" --gas-prices "0.025stake" --gas "auto" --gas-adjustment 1.2 --output json | jq -r '.logs[0].events[0].attributes[0].value'
-
-# Copy the output contract address and then 'exit' the container.
-exit
-
-Configure and Run the Oracle Service
-
-Generate Client: From the sample-contract directory:
-
+* Download the prebuilt Node.js + npm binaries: [https://nodejs.org/en/download/](https://nodejs.org/en/download/)
+* Complete installation with default options.
+* Install `cosmwasm-ts-codegen`: 
+```bash
+npm install -g @cosmwasm/ts-codegen@1.6.0
+```
+
+## 8. Install Postman
+* Download the binary: [https://www.postman.com/downloads/](https://www.postman.com/downloads/)
+* Import the Postman Collection found in `oracle-service` directory.
+
+# Compiling and deploying the Smart Contract
+We have created a sample cosmwasm smart contract with some basic functionality. 
+* `Send()` is a basic wrapper around `BankMsg`. Sends the tokens to a receiver's address.
+* `OracleDataUpdate()` updates the data stored in smart contract state with the new provided string. Also verifies signature to ensure the data is signed by oracle.
+* `UpdateOracle()` updates the public key of the oracle.
+
+## Compile the smart contract
+Change working directory
+```bash
+cd sample-contract
+```
+Build WASM
+```bash
+RUSTFLAGS="-C link-arg=-s" cargo wasm
+```
+Confirm `sample_contract.wasm` is listed
+```bash
+ls target/wasm32-unknown-unknown/release/sample_contract.wasm
+```
+Optimize WASM
+```bash
+wasm-opt -Os --signext-lowering ./target/wasm32-unknown-unknown/release/sample_contract.wasm -o ./target/wasm32-unknown-unknown/release/sample_contract_opt.wasm
+```
+Validate sample_contract_opt.wasm
+```bash
+cosmwasm-check ./target/wasm32-unknown-unknown/release/sample_contract_opt.wasm
+```
+
+## Deploy the smart contract
+By now the optimized contract should be ready, We will be deploying this optimized contract on the local blockchain.
+
+### Import accounts 
+Let's first import the accounts into the cosmy wasmy so we can use them further.
+Right click on the Beaker.toml file and click Sync Beaker config.
+
+![Sync Beaker Config](./docs/sync_beaker_config.jpeg "Sync Beaker Config")
+
+### Upload a smart contract
+
+Let's first select the admin account for deploying and instantiating the Smart acoount. 
+
+![Select admin account](./docs/select_account.jpeg "Select admin account")
+
+The, right click on sample_contract_opt.wasm and click Upload Contract.
+
+![Upload Contract](./docs/upload_contract.jpeg "Upload Contract")
+
+Output would be something like this, Note down the code_id 
+
+![Upload contract output](./docs/upload_contract_output.jpeg "Upload contract output")
+
+### Instantiate the smart contract
+
+Now let's instantiate the smart contract, select the admin account enter the code_id in respective box and provide the conntract label and use the follwing json as the payload and then click on Initialize.
+```json
+{
+    "oracle_pubkey": "AjrX9BclyF9K8drtbJ+0+FBbGsS4Pg+UjPiYfBT7nRh2",
+    "oracle_key_type": "secp256k1"
+}
+```
+![Instantiate](./docs/instantiate.jpeg "Instantiate")
+
+Output would be something like this, note down the contractAddress.
+![Instantiate Output](./docs/instantiate_output.jpeg "Instantiate Output")
+
+### Import the smart contract
+
+Click on the + in CONTRACT row and paste your smart contract address obtained from the previous step and click enter. Your contract will now be imported inside the cosmy wasmy extension and can be used then for interacting with the contract. It will appear under the CONTRACT tab with the name we specified while instantiating it.
+
+![Import Contract](./docs/import_contract.jpeg "Import Contract")
+
+### Query the smart contract
+
+Now let's query the smart contract admin. Put the follwing json as payload.
+```json
+{"get_admin": {}}
+```
+![Query Admin](./docs/query_admin.jpeg "Query Admin")
+
+Similarly you can run the other queries using the following payloads.
+```json
+{"get_oracle_data": {}}
+{"get_oracle_pubkey": {}}
+```
+
+### Execute the smart contract
+
+Now let's execute the send on the smart contract. Put the follwing json as payload and put the amout to be transferred in the respective box. You can change the reciepient in the payload and select the sender from the ACCOUNT tab and the smart contract from CONTRACT tab.
+```json
+{
+  "send": {
+    "recipient": "wasm175vkrltwkfshvqa539xzu7gwqjppz8p5ltuj4x"
+  }
+}
+```
+![Execute Send](./docs/execute_send.jpeg "Execute Send")
+
+Similarly you can run the other execute using the following payloads.
+```json
+{
+    "update_oracle": {
+        "new_pubkey": "AjrX9BclyF9K8drtbJ+0+FBbGsS4Pg+UjPiYfBT7nRh2",
+        "new_key_type": "secp256k1"
+    }
+}
+```
+
+# Building and running oracle-service
+## Generating a cosmjs client for the contract
+Command for installing `cosmwasm-ts-codegen` should be in the prerequisites. Ensure it is installed.
+
+Make sure to run this after making changes to the contract and deploying it so that the service can interact with the contract properly.
+
+Go to the contract directory and build schema
+```bash
+cd sample-contract
+cargo schema
+```
+
+Run the cosmwasm-ts-codegen command to generate client from the JSON schema file.
+```bash
 cosmwasm-ts-codegen generate \
-  --plugin client \
-  --schema ./schema \
-  --out ../oracle-service/src/sdk \
-  --name oracle
+    --plugin client \
+    --schema ./schema \
+    --out ../oracle-service/src/sdk \
+    --name oracle
+```
+Answer the prompt accordingly
+```bash
+? [bundle] enable bundle? No
+```
+The newly generated files should be in `oracle-service/src/sdk`
 
-Configure: Create a .env file in the oracle-service directory and add the contract address:
-
-CONTRACT_ADDRESS="<paste-your-contract-address-here>"
-
-Run:
-
+## Running and interacting with the oracle service
+Run the oracle service
+```bash
 cd oracle-service
-npm install
 npx ts-node src/app.ts
+```
+Ensure the chain is also running.
 
-🧗 Challenges We Ran Into
-Data Volume: The full dataset is massive. We had to develop efficient data parsing and querying strategies to ensure the oracle could respond in a timely manner.
+Open Postman, ensure the collection is imported.
+Two types of requests there - `get-oracle-data` and `update-oracle-data`.
 
-On-Chain/Off-Chain Synchronization: Ensuring the oracle reliably listens to and responds to events from the smart contract required careful state management and robust error handling.
+Run these to check if the connection is working. 
 
-Defining "Risk": Quantifying AML risk is subjective. Developing a heuristic model that is both fair and effective was a significant challenge and required iterative tuning.
+# Public Crypto Data
 
-🎉 Accomplishments & What's Next
-Accomplishments: We successfully built a fully functional end-to-end prototype, demonstrating a viable model for on-chain compliance checks.
+See article from GCP: https://cloud.google.com/blog/products/data-analytics/introducing-six-new-cryptocurrencies-in-bigquery-public-datasets-and-how-to-analyze-them
 
-What's Next:
+## Pulling and preparing data
+We have extracted samples from bitcoin (`bigquery-public-data.crypto_bitcoin`) and ethereum (`bigquery-public-data.crypto_ethereum`) datasets from BigQuery and have uploaded to https://storage.googleapis.com/blockchain-hackathon/hackathon.zip. 
+* A 1% sample was queried from each table
+* Ethereum traces and Bitcoin transactions were limited further due to the size of the response.
 
-➡️ Implement the advanced Graph Analysis and Machine Learning models for risk scoring.
+Download and extract the folder (and sub folders) to `./data`. Tree folder should look like:
 
-➡️ Integrate more data sources (e.g., other blockchains, public sanctions lists).
+```
+wfHackathon
+├── data
+    ├── btc
+        ├── btc-inputs1
+        ├── btc-inputs2
+        ├── btc-inputs3
+        ├── btc-inputs4
+        ├── btc-inputs5
+        ├── btc-outputs1
+        ├── btc-outputs2
+        ├── btc-outputs3
+        ├── btc-outputs4
+        ├── btc-blocks000000000000.csv
+        └── btc-transactions000000000000.csv
+    ├── eth
+        ├── eth-balances
+        ├── eth-blocks
+        ├── eth-logs1
+        ├── eth-logs2
+        ├── eth-logs3
+        ├── eth-logs4
+        ├── eth-logs5
+        ├── eth-logs6
+        ├── eth-logs7
+        ├── eth-sessions
+        ├── eth-token_transfers
+        ├── eth-transactions1
+        ├── eth-transactions2
+        ├── eth-transactions3
+        ├── eth-transactions4
+        ├── eth-transactions5
+        ├── eth-transactions6
+        ├── eth-transactions7
+        ├── eth-contracts000000000000.csv 
+        ├── eth-load_metadata.csv  
+        ├── eth-tokens000000000000.csv 
+        └── eth-traces000000000000.csv
+    └── cleanup.sh
+└── docker
+...
+```
+Two folders will need cleaned up (filenames appended with .csv)
+```bash
+cd data
+./cleanup.sh
+```
 
-➡️ Build a user-friendly front-end for interacting with the smart contract and viewing wallet risk profiles.
+Pull postgres image
+```bash
+docker pull postgres:15
+```
 
-➡️ Decentralize the oracle service further by using a network of oracle nodes.
+Run postgres Container. This command will execute the scripts under ./db-scripts (create databases/schema and load sample data). To load all data, modify [./db-scripts/03-load-data.sh](./db-scripts/03-load-data.sh). 
+```bash
+docker run -d --name postgres -v $(pwd)/data:/crypto_data \
+  -v $(pwd)/db-scripts:/docker-entrypoint-initdb.d/ \
+  -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres -e POSTGRES_PASSWORD=password \
+  postgres:15
+```
 
-👥 Team
-Name
+Once your container is running, exec into it:
+```bash
+docker exec -it postgres bash
+```
 
-Role
+Then you can run verify db was populated:
+```bash
+psql -h localhost -U postgres -d bitcoin
 
-Contact
+# confirm tables are listed
+\d
 
-[Your Name]
+# query from tables. select * ...
+```
 
-Blockchain Dev
+Cleanup:
+```bash
+docker stop postgres
+```
+Likely will want to avoid running `docker rm postgres` once all data is loaded.
 
-[Link to your GitHub/LinkedIn]
+# ✅ You are now ready!
 
-[Teammate's Name]
+With the above setup, you can:
 
-Oracle Dev
-
-[Link to their GitHub/LinkedIn]
-
-🎬 Demo & Presentation
-Demo Video: [Link to Demo Video - e.g., YouTube, Loom]
-
-Presentation Slides: [Link to Presentation - e.g., Google Slides, PDF]
+* Run a local Cosmos SDK blockchain.
+* Develop and deploy a cosmwasm smart contract.
+* Build and run the oracle service.
+* Pull data into a local Postgres instance. 
