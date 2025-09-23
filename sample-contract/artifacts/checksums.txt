@@ -1,0 +1,1 @@
+b3d9005a5ed9923da9b6064aa1c9a46e7ebf10edbc0cb04420ded56fe314fd19  sample_contract.wasm

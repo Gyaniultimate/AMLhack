@@ -29,8 +29,6 @@
     // "noPropertyAccessFromIndexSignature": true,
 
     // Recommended Options
-    "strict": true,
-
-    "skipLibCheck": true,
+    
   }
 }

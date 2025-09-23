@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AML Oracle — Mini UI</title>
+  <style>
+    :root { --bg:#0b1020; --panel:#121936; --muted:#8aa0c5; --text:#e9eefc; --ok:#1db954; --warn:#eab308; --bad:#ef4444; --mid:#38bdf8; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:linear-gradient(180deg, #0b1020, #0b1020 60%, #0f1631); color:var(--text); }
+    .wrap { max-width: 980px; margin: 40px auto; padding: 0 16px; }
+    .card { background: var(--panel); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+    .row { display:flex; gap:12px; flex-wrap:wrap; }
+    .col { flex:1 1 220px; }
+    label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    input, select, textarea { width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#0e1530; color:var(--text); outline:none; }
+    textarea { min-height: 44px; resize: vertical; }
+    input::placeholder, textarea::placeholder { color:#6e7fa9; }
+    button { background:#2563eb; color:white; border:none; padding:12px 16px; border-radius:12px; font-weight:600; cursor:pointer; }
+    button.secondary { background:#1f2937; }
+    button.ghost { background:transparent; border:1px solid rgba(255,255,255,.15); }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    .badge { display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:700; letter-spacing:.02em; }
+    .LOW { background:#123b26; color:#86efac; border:1px solid rgba(134,239,172,.25); }
+    .MEDIUM { background:#3a2a14; color:#fde68a; border:1px solid rgba(253,230,138,.25); }
+    .HIGH { background:#3a1c1c; color:#fca5a5; border:1px solid rgba(252,165,165,.25); }
+    .CRITICAL { background:#451a1a; color:#fecaca; border:1px solid rgba(254,202,202,.25); }
+    .muted { color: var(--muted); }
+    .grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+    .kv { background:#0d1430; border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:12px; }
+    .kv h4 { margin:0 0 6px; font-size:12px; color:#9db1d8; font-weight:600; }
+    .kv div { font-size:14px; }
+    pre { margin:0; white-space:pre-wrap; word-break:break-word; }
+    .footer { margin-top:18px; font-size:12px; color:var(--muted); text-align:center; }
+    .spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,.25); border-top-color:#fff; border-radius:50%; animation:spin .9s linear infinite; display:inline-block; vertical-align:middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .section { margin-top:20px; }
+    .json { background:#0a1129; border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:12px; }
+    .scorebar { margin-top:8px; height:10px; background:#0b1535; border-radius:999px; overflow:hidden; border:1px solid rgba(255,255,255,.08); }
+    .scorebar > div { height:100%; width:0%; transition: width .4s ease; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 style="margin:0 0 12px">AML Oracle — Mini UI</h1>
+    <p class="muted" style="margin:0 0 20px">Call your oracle-service and visualize the risk score. Edit the endpoint if needed.</p>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="row">
+        <div class="col">
+          <label>Endpoint</label>
+          <input id="endpoint" placeholder="http://localhost:3000" />
+        </div>
+        <div class="col">
+          <label>Chain</label>
+          <select id="chain">
+            <option value="btc">btc</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>Address</label>
+          <input id="address" placeholder="1GEPiKRPBVx1nzd6TKJ6svQ2hxooFUuw3A" />
+        </div>
+        <div class="col">
+          <label>Lookback (tx)</label>
+          <input id="lookback" type="number" value="20" />
+        </div>
+        <div class="col">
+          <label>High value threshold (units)</label>
+          <input id="highValue" type="number" value="1000000000" />
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div class="col" style="flex:1 1 100%">
+          <label>Sanctions / watchlist addresses (comma or newline separated)</label>
+          <textarea id="sanctions" placeholder="1badAddr..., 1anotherBad..., ..."></textarea>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px; align-items:center;">
+        <button id="btnRun">Assess</button>
+        <button id="btnHealth" class="secondary">Health</button>
+        <!-- Add two buttons near Assess/Health -->
+        <button id="btnSubmit">Assess + Write</button>
+        <button id="btnRead">Read On-Chain</button>
+
+        <span id="status" class="muted"></span>
+      </div>
+    </div>
+
+    <div id="result" class="card" style="display:none">
+      <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px">
+        <h3 style="margin:0">Result</h3>
+        <div id="band" class="badge">band</div>
+      </div>
+      <div class="grid">
+        <div class="kv">
+          <h4>Risk score</h4>
+          <div id="score">—</div>
+          <div class="scorebar"><div id="scoreFill"></div></div>
+        </div>
+        <div class="kv"><h4>Last N</h4><div id="lastN">—</div></div>
+        <div class="kv"><h4>Flags</h4><div id="flags">—</div></div>
+        <div class="kv"><h4>Observed at</h4><div id="obs">—</div></div>
+      </div>
+      <div class="section">
+        <h4 class="muted" style="margin:0 0 8px">Evidence</h4>
+        <div class="json"><pre id="evidence">{}</pre></div>
+      </div>
+      <div class="section">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
+          <h4 class="muted" style="margin:0">Raw JSON</h4>
+          <button id="btnCopy" class="ghost" title="Copy JSON to clipboard">Copy JSON</button>
+        </div>
+        <div class="json"><pre id="raw">{}</pre></div>
+      </div>
+    </div>
+
+    <p class="footer">Tip: if you see CORS errors, enable CORS in your oracle-service (install <code>cors</code> and add <code>app.use(cors({ origin: true }))</code>).</p>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const store = {
+      get key(){ return 'amlui'; },
+      load(){ try{ const o = JSON.parse(localStorage.getItem(this.key) || '{}'); return o; } catch{ return {}; } },
+      save(o){ localStorage.setItem(this.key, JSON.stringify(o)); }
+    };
+
+    function fmtTime(sec){ try{ const d = new Date(sec*1000); return d.toLocaleString(); } catch{ return String(sec); } }
+
+    function setStatus(text, spinning=false){
+      const s = $('status');
+      s.innerHTML = spinning ? `<span class="spinner"></span> ${text}` : text;
+    }
+
+    function colorForScore(score){
+      if(score >= 80) return '#ef4444';
+      if(score >= 60) return '#f59e0b';
+      if(score >= 30) return '#22c55e';
+      return '#38bdf8';
+    }
+
+    function paint(resp){
+      $('result').style.display = 'block';
+      const { profile } = resp;
+      $('score').textContent = profile.riskScore;
+      $('lastN').textContent = profile.lastN;
+      $('flags').textContent = (profile.flags && profile.flags.length) ? profile.flags.join(', ') : '—';
+      $('obs').textContent = fmtTime(profile.observed_at);
+      const band = String(profile.band || '').toUpperCase();
+      const badge = $('band');
+      badge.textContent = band || '—';
+      badge.className = `badge ${band || ''}`;
+      $('evidence').textContent = JSON.stringify(profile.evidence || {}, null, 2);
+      $('raw').textContent = JSON.stringify(resp, null, 2);
+
+      const score = Number(profile.riskScore || 0);
+      const fill = $('scoreFill');
+      fill.style.width = Math.max(0, Math.min(100, score)) + '%';
+      fill.style.background = colorForScore(score);
+    }
+
+    async function health(){
+      const base = $('endpoint').value.replace(/\/$/,'');
+      setStatus('Checking health…', true);
+      try {
+        const r = await fetch(`${base}/health`);
+        const j = await r.json();
+        setStatus(`OK • port=${j.port ?? 3000}`);
+      } catch(err){
+        setStatus('Health failed: ' + (err?.message || err));
+      }
+    }
+
+    function parseSanctions(){
+      const raw = $('sanctions').value || '';
+      return raw.split(/|,/) .map(s => s.trim()).filter(Boolean);
+    }
+
+    async function assess(){
+      const base = $('endpoint').value.replace(/\/$/,'');
+      const body = {
+        chain: $('chain').value,
+        address: $('address').value.trim(),
+        lookback: Number($('lookback').value || 20),
+        highValue: Number($('highValue').value || 0),
+        sanctions: parseSanctions()
+      };
+      store.save({ endpoint: base, address: body.address, highValue: body.highValue, lookback: body.lookback });
+
+      setStatus('Scoring…', true);
+      try {
+        const r = await fetch(`${base}/assess`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if(!r.ok){ const t = await r.text().catch(()=>'' ); throw new Error(`${r.status} ${r.statusText} ${t}`); }
+        const j = await r.json();
+        paint(j);
+        setStatus('Done');
+      } catch(err){
+        setStatus('Error: ' + (err?.message || err));
+      }
+    }
+
+    function copyRaw(){
+      const text = $('raw').textContent || '';
+      navigator.clipboard.writeText(text).then(() => setStatus('Copied JSON to clipboard')).catch(e=> setStatus('Copy failed: ' + e));
+    }
+
+    // init
+    (function(){
+      const saved = store.load();
+      $('endpoint').value = saved.endpoint || 'http://localhost:3000';
+      $('address').value = saved.address || '1GEPiKRPBVx1nzd6TKJ6svQ2hxooFUuw3A';
+      $('highValue').value = saved.highValue || 1000000000;
+      $('lookback').value = saved.lookback || 20;
+      $('btnRun').addEventListener('click', assess);
+      $('btnHealth').addEventListener('click', health);
+      $('btnCopy').addEventListener('click', copyRaw);
+    })();
+    async function assessAndSubmit(){
+  const base = $('endpoint').value.replace(/\/$/,'');
+  const body = {
+    chain: $('chain').value,
+    address: $('address').value.trim(),
+    lookback: Number($('lookback').value || 20),
+    highValue: Number($('highValue').value || 0),
+    sanctions: parseSanctions()
+  };
+  setStatus('Scoring + writing on-chain…', true);
+  try {
+    const r = await fetch(`${base}/assess-and-submit`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const j = await r.json();
+    if(!r.ok) throw new Error(j.error || r.statusText);
+    $('raw').textContent = JSON.stringify(j, null, 2);
+    setStatus(`Wrote on chain • tx=${j.txHash} h=${j.height}`);
+  } catch(err){ setStatus('Error: ' + (err?.message || err)); }
+}
+
+async function readOnChain(){
+  const base = $('endpoint').value.replace(/\/$/,'');
+  setStatus('Reading from chain…', true);
+  try {
+    const r = await fetch(`${base}/onchain/latest`);
+    const j = await r.json();
+    if(!r.ok) throw new Error(j.error || r.statusText);
+    $('raw').textContent = JSON.stringify(j, null, 2);
+    setStatus('Loaded from chain');
+  } catch(err){ setStatus('Error: ' + (err?.message || err)); }
+}
+
+$('btnSubmit').addEventListener('click', assessAndSubmit);
+$('btnRead').addEventListener('click', readOnChain);
+
+  </script>
+</body>
+</html>
