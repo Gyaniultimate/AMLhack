@@ -1,5 +1,17 @@
 # AML Smart-Contract Oracle (Cosmos + Postgres) — Hackathon MVP
 
+--
+
+## Team
+
+**Team Name:** VGBoost  
+**Team Members:**  
+- Gyanendra Prakash  
+- Vaishvi
+
+---
+...existing code...
+
 This repo contains a working end-to-end MVP that:
 
 - Runs a local Cosmos chain
