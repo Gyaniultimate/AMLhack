@@ -2,3 +2,28 @@
 data/btc/*
 data/eth/*
 *.DS_Store
+# env & keys
+.oracle/ 
+.env
+*.keystore
+*.pem
+*.key
+
+# local data & DB dumps
+data/
+postgres/
+*.csv
+*.zip
+*.gz
+# Ignore everything in data/
+data/**
+
+# But keep a placeholder file if you want the folder tracked
+!data/.gitkeep
+
+
+# node/rust build stuff
+node_modules/
+dist/
+target/
+.DS_Store

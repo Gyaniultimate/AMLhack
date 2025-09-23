@@ -1,8 +1,10 @@
 import express from "express";
 import { getLastNTxsBTC } from "./data/bitcoin";
-import { computeRisk } from "./aml/scorer"
+import { computeRisk } from "./aml/scorer";
 import cors from 'cors';
 import { pool } from './db';
+import { submitOracleResult, queryOracleData } from './onchain';
+
 
 
 const app = express();

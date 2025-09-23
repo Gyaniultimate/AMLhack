@@ -1,4 +1,4 @@
-import { withClient } from "../db";
+import { withClient } from "../db"
 
 export type BtcTxAgg = {
   tx_hash: string;
