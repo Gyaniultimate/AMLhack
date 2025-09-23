@@ -10,7 +10,7 @@
 - Vaishvi
 
 ---
-...existing code...
+
 
 This repo contains a working end-to-end MVP that:
 
